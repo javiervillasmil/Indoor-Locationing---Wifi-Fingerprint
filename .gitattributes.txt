@@ -1,1 +1,3 @@
 3. Report/* linguist-vendored
+
+*.html linguist-language=R
