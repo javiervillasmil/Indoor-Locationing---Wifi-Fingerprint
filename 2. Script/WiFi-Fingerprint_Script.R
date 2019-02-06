@@ -1,54 +1,14 @@
-install.packages("anytime")
-install.packages("tibble")
-install.packages("tidyverse")
-install.packages("lubridate")
-install.packages("dplyr")
-install.packages("ggmap")
-install.packages("plotly")
-install.packages("cowplot")
-install.packages("esquisse")
-install.packages("reshape2")
-install.packages("expss")
-install.packages("caret")
-install.packages("e1071")
-install.packages("doParallel")
-install.packages("liquidSVM")
-install.packages("DMwR")
-install.packages("kknn")
-install.packages("C50")
+# Wifi Locationing - Fingerprint
+# Javier E. Villasmil L
+# Jan-2019
 
-library(tidyverse)
-library(lubridate)
-library(dplyr)
-library(anytime)
-library(ggmap)
-library(plyr)
-library(plotly)
-library(cowplot)
-library(reshape2)
-library(expss)
-library(caret)
-library(lattice)
-library(ggplot2)
-library(caret)
-library(rpart)
-library(RColorBrewer)
-library(randomForest)
-library(data.table)
-library(liquidSVM)
-library(DMwR)
-library(kknn)
-library(C50)
-library(e1071)
-library(doParallel)
-
+library(pacman)
+p_load(tidyverse,lubridate,dplyr,anytime,plyr,plotly,cowplot,reshape2,expss,caret,lattice,ggplot2,rpart,RColorBrewer,randomForest,data.table,liquidSVM,DMwR,kknn,C50,e1071,doParallel)
 
 #import the fingerprint WiFi dataset
 wifi <- read.csv("C:/Users/Javier Villasmil/Desktop/Ubiqum/Task 010 - WiFi Location/UJIndoorLoc/trainingData.csv")
 
 test <- read.csv("C:/Users/Javier Villasmil/Desktop/Ubiqum/Task 010 - WiFi Location/UJIndoorLoc/validationData.csv")
-
-
 
 #First look to the train dataset
 str(wifi)
@@ -140,7 +100,7 @@ colremove <- c(colindex,colindextest)
 wifi <- wifi[,-colremove]
 test <- test[,-colremove]
 
-#changing values from 100 (no measurement) to -110dBm (low Signal)
+#changing values from 100 (no measurement) to -105dBm (low Signal)
 head(wifi)
 head(test)
 wifi[,1:312] <- as.data.frame(apply(wifi[,1:312], 2, function(x) {ifelse(x == 100,-105,x)}))
@@ -158,7 +118,8 @@ test$new <- apply(test[,1:312], 1, function(x) {sum(x)})
 rowremovetest <- which(test$new == (312*(-105))) #empty
 test$new <- NULL
 
-#BEST WAY
+# A cleaner code to remove los signal registers
+
 #keepwifi <- apply(wifi[,1:312], 1, function(x) length(unique(x[!is.na(x))) != 1) #<-HELP READING THIS ONE 
 #wifi <- wifi[keepwifi, ] 
 #
@@ -176,7 +137,7 @@ nozerocolumns <- rownames(wifizerovar[which(wifizerovar$freqRatio > 10000),])
 #checks that the index of the columns corresponds to the WAP that we want to remove
 colnames(wifi)[which(names(wifi) %in% nozerocolumns)]
 
-#removes the WAP by index.
+#removes the WAP with "NearZeroVar" by index.
 #wifi <- wifi[,-which(names(wifi) %in% nozerocolumns)] - Decided not to remove these columns because the values can be interesting for fingerprints
 
 #same procedure agsint the test set
@@ -184,6 +145,7 @@ colnames(wifi)[which(names(wifi) %in% nozerocolumns)]
 #test <- test[,-which(names(test) %in% nozerocolumns)]
 
 ######################################################################################
+
 #compare the two datasets WIFI and TEST to check if both are equal (column wise)
 columncompar <- function(x,y) {
   for (i in names(x)) {
@@ -249,16 +211,15 @@ wifi %>%
   group_by(High_WAP)
 
 
-######################################################################################
-############################################### 
+###############################################
 #################### PLOTS ####################
 #################### PLOTS ####################
-#################### PLOTS #################### https://cran.r-project.org/web/packages/esquisse/readme/README.html
+#################### PLOTS #################### 
 #################### PLOTS ####################
-############################################### 
-######################################################################################
+###############################################
 
 ############# NUMBER OF SIGNALS BY ACCESS POINT ###########
+
 #Creates a column with the count of Number of Signals per WAP
 wifi$WAP_num <- apply(wifi[,1:312], 1, function (x) length(x[x != -105]))
 test$WAP_num <- apply(test[,1:312], 1, function (x) length(x[x != -105]))
@@ -302,6 +263,7 @@ wifiRSSI <- wifi[,1:312]
 wifiRSSI <- melt(wifiRSSI)
 wifiRSSI <- wifiRSSI %>%
   filter(value != -105)
+
 #validation
 testRSSI <- test[,1:312]
 testRSSI <- melt(testRSSI)
@@ -314,9 +276,9 @@ ww <- ggplot() + geom_histogram(data = testRSSI, aes(x = value),binwidth = 1,col
 
 plot_grid(ll,ww)
 
+#Plotly
+#######
 
-
-######################################################################################
 colnames(wifi)
 #FONTS FOR PLOTLY
 font1 <- list(
@@ -424,7 +386,11 @@ p2
 #
 levels(wifi$BUILDINGID)
 levels(wifi$FLOOR)
+
+#Subsets for each building and floor
+
 ####### BUILDING 0 - TI ##################################################################################
+
 #TRAIN SET
 wifi_b0 <- wifi %>%
   filter(BUILDINGID == "TI")
@@ -535,13 +501,15 @@ test_b2 <- test %>%
     #BUILDING 2 - FLOOR 5
     test_b2_5 <- test_b2 %>%
       filter(FLOOR == "5th Floor")  
-
-############################################### https://cran.r-project.org/web/packages/esquisse/readme/README.html
+    
+#####################################################################################
+    
+###############################################
 #################### PLOTS #################### 
 #################### PLOTS ####################
+#################### PLOTS #################### #More Plots!
 #################### PLOTS ####################
-#################### PLOTS ####################
-############################################### https://cran.r-project.org/web/packages/esquisse/readme/README.html
+###############################################
 
 # BUILDING 0 - TI    
 p3 <- ggplot() + 
@@ -661,7 +629,8 @@ l2 <- ggplot()+geom_boxplot(aes(y=wifi$LONGITUDE),outlier.colour="red", outlier.
 plot_grid(l,l2)
 ######################################################################
 
-#APPLYING MODELS -> BUILDING -> FLOOR -> LATITUDE -> LONGITUDE -> FLOOR
+# BUILDINGID PREDICTION
+
 # Prepare Parallel Process
 cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
 registerDoParallel(cluster)
@@ -696,14 +665,17 @@ confusionMatrix(prediction3, test$BUILDINGID)
 save(svm_predict_building, file = "svm_predict_building.rda")
 ###################################################################
 
+
 #CREATING DATASETS FOR FLOOR PREDICTION
 ###################################################################
+
 Test_pBuilding <- test
 #replaces my the buildingID predictions
 Test_pBuilding$BUILDINGID <- prediction2
 #check if the overwriting is correct
 test$BUILDINGID[which(!(Test_pBuilding$BUILDINGID == test$BUILDINGID))] #real value is a TI
 Test_pBuilding$BUILDINGID[which(!(Test_pBuilding$BUILDINGID == test$BUILDINGID))] #predicted value is a TD
+
 #creates a new training dataset with the bulding and floor included
 Model_Building_Floor <- wifi[,c(1:312,315,316)]
 
@@ -721,8 +693,7 @@ test_b2_pBuilding <- Test_pBuilding %>%
 
 ###################################################################
 
-#FLOOR PREDICTION USING BUILDINGID AS PREDICTOR ONE MODEL FOR ALL BUILDINGS
-####################
+#FLOOR PREDICTION
 
 #apply a random forest to predict floor using the predicted building - 187seg
 #Accuracy     Kappa 
@@ -843,36 +814,7 @@ load("C:\\Users\\Javier Villasmil\\rf_predict_floor.rda")
 ###################################################################
 
 
-#randomForest for LATITUDE in building 0 -
-system.time(rf_LAT00 <- randomForest(LATITUDE ~ .,data = Model_Building_Latitude,  ntree = 100, do.trace = TRUE, importance = TRUE))
-prediction_RF_LAT_00 <- predict(rf_LAT00,test_b0_pBuilding)
-performancerf_RF_LAT_00 <- postResample(prediction_RF_LAT_00,test_b0_pBuilding$LATITUDE)
-confusionMatrix(prediction_RF_LAT_00, test_b0_pBuilding$LATITUDE)
-
-#SVM for LATITUDE in building 0 -
-system.time(svm_predict_latitude00 <- train(LATITUDE~., data = Model_Building_Latitude, method = "svmLinear", trControl = trainControl(verboseIter = TRUE)))
-prediction_SVM_LAT_00 <- predict(svm_predict_latitude00,test_b0_pBuilding)
-performanceSVM02 <- postResample(prediction_SVM_LAT_00,test_b0_pBuilding$LATITUDE)
-confusionMatrix(prediction_SVM_LAT_00, test_b0_pBuilding$LATITUDE)
-
-#################################################
-
-#randomForest for LATITUDE in building 0 -
-system.time(rf_LAT00 <- randomForest(LATITUDE ~ .,data = Model_Building_Latitude,  ntree = 100, do.trace = TRUE, importance = TRUE))
-prediction_RF_LAT_00 <- predict(rf_LAT00,test_b0_pBuilding)
-performancerf_RF_LAT_00 <- postResample(prediction_RF_LAT_00,test_b0_pBuilding$LATITUDE)
-confusionMatrix(prediction_RF_LAT_00, test_b0_pBuilding$LATITUDE)
-
-#SVM for LATITUDE in building 0 -
-system.time(svm_predict_latitude00 <- svm(LATITUDE~., data = Model_Building_Latitude, method = "svmLinear", trControl = trainControl(verboseIter = TRUE)))
-prediction_SVM_LAT_00 <- predict(svm_predict_latitude00,test_b0_pBuilding)
-performanceSVM02 <- postResample(prediction_SVM_LAT_00,test_b0_pBuilding$LATITUDE)
-confusionMatrix(prediction_SVM_LAT_00, test_b0_pBuilding$LATITUDE)
-
-##################################
-
-################################################# 
-################################################# 
+# LATITUDE PREDICTION
 
 ################################################# RF LATITUDE FOR ALL
 system.time(rf_LAT00 <- randomForest(LATITUDE ~ .,data = Model_Building_Latitude,  ntree = 100, do.trace = TRUE, importance = TRUE))
@@ -980,9 +922,7 @@ performance_knn_latitude_02 <- postResample(prediction_knn_latitude_02,test_b2_p
 ######################################
 
 
-#######################################
-
-#LONGITUDE - ONE MODEL FOR EACH BUILDING# - 3 MODELS TOTAL
+# LONGITUDE PREDICTION
 
 ###################################### RANDOM FOREST
 system.time(rf_longitude_b00 <- randomForest(LONGITUDE ~ .,data = wifi_b0[,c(1:312,313)],  ntree = 100, do.trace = TRUE, importance = TRUE))
@@ -1182,6 +1122,7 @@ plot_grid_final_floor <- plot_grid(CM_Floor_Plot,plot_grid_floors, ncol = 2)
 
 ####################################################################
 ####################################################################
+
 #subsetting errors
 test_errors <- test_errors %>%
   mutate(LATITUDE_RES = LATITUDE - LATITUDE_PRED, 
@@ -1233,7 +1174,6 @@ ggplot() +
         axis.text.y  = element_text(size=8))+
   scale_color_brewer(palette = "Set1")
 
-#########################################################
 #########################################################
 #########################################################
 
@@ -1362,7 +1302,7 @@ ggplot(test_errors, aes(y=DISTANCE_ERROR,x=BUILDINGID, fill=BUILDINGID)) +
   geom_jitter(shape=1, position=position_jitter(0.1))
   
 
-  #########################################
+#########################################
 shapiro.test(test_errors$LONGITUDE_RES)
 shapiro.test(test_errors$LATITUDE_RES)
 shapiro.test(test_errors$DISTANCE_ERROR)
@@ -1546,8 +1486,8 @@ dd <- ggplot(data=test_big_distance_errors[test_big_distance_errors$BUILDINGID %
   theme(strip.text = element_text(face="bold", size=10,lineheight=4.0),
         strip.background = element_rect(fill="seashell2"))
 
-
 plot_grid(cc,dd)  
+
 
 ## BUILDING 02
 ee <- ggplot(data=test_big_distance_errors[test_big_distance_errors$BUILDINGID %in% c("TC"),], aes(x = LONGITUDE, y = LATITUDE,colour = DISTANCE_ERROR)) +
@@ -1644,3 +1584,7 @@ ggplot(data=test_big_distance_errors[test_big_distance_errors$BUILDINGID %in% c(
   geom_segment(aes(x = LONGITUDE, y = LATITUDE, xend = LONGITUDE_PRED, yend = LATITUDE_PRED),
                arrow = arrow(length = unit(0.01, "npc")))+
   scale_color_gradient(low="green", high="red", space ="Lab", limit=c(0,20), na.value = "blue")
+
+#################################################################################################################################################
+#################################################################################################################################################
+#################################################################################################################################################
